@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
+  Award,
   BarChart3,
   BookMarked,
   Building2,
@@ -58,6 +59,24 @@ export type UzmanWorkerRow = {
   phone: string | null;
 };
 
+export type SpecialistSummaryRow = {
+  id: string;
+  email: string;
+  full_name: string | null;
+  role: string;
+  isg_license_number: string | null;
+};
+
+export type AdminCertificateSummaryRow = {
+  resultId: string;
+  userId: string;
+  personName: string;
+  courseTitle: string;
+  score: number;
+  issuedAt: string;
+  certLabel: string;
+};
+
 export type UzmanProgressRow = {
   key: string;
   workerName: string;
@@ -80,6 +99,10 @@ type Props = {
   quizzesByCourseId: Record<string, QuizRow>;
   workers: UzmanWorkerRow[];
   progressRows: UzmanProgressRow[];
+  /** Yalnızca ADMIN — tüm uzman ve yönetici profilleri */
+  specialists?: SpecialistSummaryRow[];
+  /** Yalnızca ADMIN — başarılı sınavlar (sertifika özeti) */
+  adminCertificates?: AdminCertificateSummaryRow[];
   kayitBasarili: boolean;
 };
 
@@ -94,8 +117,12 @@ export function UzmanPanel({
   quizzesByCourseId,
   workers,
   progressRows,
+  specialists: specialistsProp,
+  adminCertificates: adminCertificatesProp,
   kayitBasarili,
 }: Props) {
+  const specialists = specialistsProp ?? [];
+  const adminCertificates = adminCertificatesProp ?? [];
   const router = useRouter();
   const [quizCourse, setQuizCourse] = useState<CourseRow | null>(null);
   const [quizPreview, setQuizPreview] = useState<{
@@ -322,23 +349,30 @@ export function UzmanPanel({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-medium text-violet-300/90">
-              Uzman paneli
+              {userRole === "ADMIN" ? "Yönetim paneli" : "Uzman paneli"}
             </p>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
               Merhaba{profile?.full_name ? `, ${profile.full_name}` : ""}
             </h1>
             <p className="mt-2 max-w-prose text-sm text-zinc-400">
-              Eğitim ve şirket atamalarını yönetin; personeli ve sınav
-              ilerlemesini aşağıdan izleyin.
+              {userRole === "ADMIN"
+                ? "Tüm şirketler, eğitimler, uzmanlar ve personel kayıtlarını görüntüleyebilir; sistem genelinde atama ve düzenleme yapabilirsiniz."
+                : "Eğitim ve şirket atamalarını yönetin; personeli ve sınav ilerlemesini aşağıdan izleyin."}
             </p>
           </div>
           <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-zinc-400">
             <GraduationCap className="h-4 w-4 text-violet-400" aria-hidden />
-            {profile?.role ?? "UZMAN"}
+            {userRole === "ADMIN" ? "ADMIN" : profile?.role ?? "UZMAN"}
           </div>
         </div>
 
-        <dl className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <dl
+          className={`mt-8 grid gap-4 sm:grid-cols-2 ${
+            userRole === "ADMIN"
+              ? "lg:grid-cols-3 xl:grid-cols-5"
+              : "lg:grid-cols-4"
+          }`}
+        >
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
             <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
               E-posta
@@ -363,6 +397,16 @@ export function UzmanPanel({
               {companies.length}
             </dd>
           </div>
+          {userRole === "ADMIN" ? (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+              <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                Uzman / yönetici
+              </dt>
+              <dd className="mt-1 text-2xl font-semibold text-white">
+                {specialists.length}
+              </dd>
+            </div>
+          ) : null}
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
             <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
               Personel
@@ -381,7 +425,9 @@ export function UzmanPanel({
                 className="h-6 w-6 text-violet-400"
                 strokeWidth={1.5}
               />
-              <h2 className="text-xl font-semibold text-white">Eğitimlerim</h2>
+              <h2 className="text-xl font-semibold text-white">
+                {userRole === "ADMIN" ? "Tüm eğitimler" : "Eğitimlerim"}
+              </h2>
             </div>
             <AddCourseModal
               defaultSpecialistName={profile?.full_name?.trim() ?? ""}
@@ -626,6 +672,65 @@ export function UzmanPanel({
           )}
         </section>
 
+        {userRole === "ADMIN" ? (
+          <section className="mt-14">
+            <div className="mb-6 flex items-center gap-2">
+              <User
+                className="h-6 w-6 text-amber-400"
+                strokeWidth={1.5}
+                aria-hidden
+              />
+              <h2 className="text-xl font-semibold text-white">
+                Uzmanlar ve yöneticiler
+              </h2>
+            </div>
+            <p className="mb-6 max-w-2xl text-sm text-zinc-500">
+              Kayıtlı İSG uzmanı ve sistem yöneticisi hesapları (tüm sistem).
+            </p>
+            {specialists.length === 0 ? (
+              <p className="text-sm text-zinc-500">Kayıt bulunmuyor.</p>
+            ) : (
+              <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02]">
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[720px] text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-white/10 bg-white/[0.04] text-xs uppercase tracking-wide text-zinc-500">
+                        <th className="px-4 py-3 font-medium sm:px-6">Ad</th>
+                        <th className="px-4 py-3 font-medium sm:px-6">E-posta</th>
+                        <th className="px-4 py-3 font-medium sm:px-6">Rol</th>
+                        <th className="px-4 py-3 font-medium sm:px-6">
+                          İSG uzmanlık no
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {specialists.map((s) => (
+                        <tr
+                          key={s.id}
+                          className="transition hover:bg-white/[0.03]"
+                        >
+                          <td className="px-4 py-3.5 font-medium text-white sm:px-6">
+                            {s.full_name?.trim() || "—"}
+                          </td>
+                          <td className="px-4 py-3.5 break-all text-zinc-400 sm:px-6">
+                            {s.email}
+                          </td>
+                          <td className="px-4 py-3.5 text-zinc-300 sm:px-6">
+                            {s.role}
+                          </td>
+                          <td className="px-4 py-3.5 font-mono text-xs text-zinc-400 sm:px-6">
+                            {s.isg_license_number?.trim() || "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </section>
+        ) : null}
+
         {/* Personel */}
         <section className="mt-14">
           <div className="mb-6 flex items-center gap-2">
@@ -633,8 +738,9 @@ export function UzmanPanel({
             <h2 className="text-xl font-semibold text-white">Personel</h2>
           </div>
           <p className="mb-6 max-w-2xl text-sm text-zinc-500">
-            Kendi eklediğiniz şirketlerdeki veya eğitim atadığınız şirketlerdeki
-            personel listelenir.
+            {userRole === "ADMIN"
+              ? "Sistemdeki tüm şirketlere bağlı personel."
+              : "Kendi eklediğiniz şirketlerdeki veya eğitim atadığınız şirketlerdeki personel listelenir."}
           </p>
           {workers.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] px-6 py-12 text-center">
@@ -758,6 +864,81 @@ export function UzmanPanel({
             </>
           )}
         </section>
+
+        {userRole === "ADMIN" ? (
+          <section className="mt-14">
+            <div className="mb-6 flex items-center gap-2">
+              <Award
+                className="h-6 w-6 text-amber-300"
+                strokeWidth={1.5}
+                aria-hidden
+              />
+              <h2 className="text-xl font-semibold text-white">
+                Sertifikalar (başarılı sınavlar)
+              </h2>
+            </div>
+            <p className="mb-6 max-w-2xl text-sm text-zinc-500">
+              Son 500 başarılı sınav; sertifika numarası uygulamadaki gösterimle
+              aynı formattadır. Belgeyi ilgili personel hesabıyla
+              görüntüleyebilirsiniz.
+            </p>
+            {adminCertificates.length === 0 ? (
+              <p className="text-sm text-zinc-500">
+                Henüz kayıtlı başarılı sınav yok.
+              </p>
+            ) : (
+              <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02]">
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[960px] text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-white/10 bg-white/[0.04] text-xs uppercase tracking-wide text-zinc-500">
+                        <th className="px-4 py-3 font-medium sm:px-6">
+                          Sertifika no
+                        </th>
+                        <th className="px-4 py-3 font-medium sm:px-6">Kişi</th>
+                        <th className="px-4 py-3 font-medium sm:px-6">
+                          Eğitim
+                        </th>
+                        <th className="px-4 py-3 font-medium sm:px-6">Puan</th>
+                        <th className="px-4 py-3 font-medium sm:px-6">
+                          Tarih
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {adminCertificates.map((c) => (
+                        <tr
+                          key={c.resultId}
+                          className="transition hover:bg-white/[0.03]"
+                        >
+                          <td className="px-4 py-3.5 font-mono text-xs text-amber-200/90 sm:px-6">
+                            {c.certLabel}
+                          </td>
+                          <td className="px-4 py-3.5 text-zinc-200 sm:px-6">
+                            {c.personName}
+                          </td>
+                          <td className="px-4 py-3.5 text-zinc-300 sm:px-6">
+                            {c.courseTitle}
+                          </td>
+                          <td className="px-4 py-3.5 text-zinc-400 sm:px-6">
+                            {c.score}
+                          </td>
+                          <td className="px-4 py-3.5 text-zinc-500 sm:px-6">
+                            {new Date(c.issuedAt).toLocaleDateString("tr-TR", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </section>
+        ) : null}
 
         {/* İlerleme */}
         <section className="mt-14">

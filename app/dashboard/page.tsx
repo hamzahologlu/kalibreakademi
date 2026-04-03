@@ -6,6 +6,8 @@ import { loadMyQuizResultsForCourses } from "@/lib/supabase/load-my-quiz-results
 import { createClient } from "@/lib/supabase/server";
 import {
   UzmanPanel,
+  type AdminCertificateSummaryRow,
+  type SpecialistSummaryRow,
   type UzmanProgressRow,
   type UzmanWorkerRow,
 } from "./uzman-panel";
@@ -17,6 +19,13 @@ import {
 type DashboardPageProps = {
   searchParams: Promise<{ kayit?: string }>;
 };
+
+function formatAdminCertLabel(resultId: string, createdAtIso: string): string {
+  const issuedAt = new Date(createdAtIso);
+  const year = issuedAt.getFullYear();
+  const segment = resultId.replace(/-/g, "").slice(0, 10).toUpperCase();
+  return `KA-${year}-${segment}`;
+}
 
 export default async function DashboardPage({
   searchParams,
@@ -48,13 +57,17 @@ export default async function DashboardPage({
 
   const isUzman =
     profile.role === "UZMAN" || profile.role === "ADMIN";
+  const isAdmin = profile.role === "ADMIN";
 
   if (isUzman) {
-    const { data: myCourses } = await supabase
+    let coursesQuery = supabase
       .from("courses")
       .select("id, title, specialist_name, video_url, created_by")
-      .eq("created_by", user.id)
       .order("title", { ascending: true });
+    if (!isAdmin) {
+      coursesQuery = coursesQuery.eq("created_by", user.id);
+    }
+    const { data: myCourses } = await coursesQuery;
 
     const { data: companies } = await supabase
       .from("companies")
@@ -124,6 +137,54 @@ export default async function DashboardPage({
       companyNameById,
     });
 
+    let specialists: SpecialistSummaryRow[] = [];
+    let adminCertificates: AdminCertificateSummaryRow[] = [];
+
+    if (isAdmin) {
+      const { data: specRows } = await supabase
+        .from("profiles")
+        .select("id, email, full_name, role, isg_license_number")
+        .in("role", ["UZMAN", "ADMIN"])
+        .order("full_name", { ascending: true, nullsFirst: false });
+
+      specialists = (specRows ?? []) as SpecialistSummaryRow[];
+
+      const { data: passedRows } = await supabase
+        .from("quiz_results")
+        .select("id, user_id, course_id, score, created_at")
+        .eq("passed", true)
+        .order("created_at", { ascending: false })
+        .limit(500);
+
+      const courseTitleById = new Map(
+        courseList.map((c) => [c.id, c.title] as const)
+      );
+      const userIds = [...new Set((passedRows ?? []).map((p) => p.user_id))];
+      const nameByUserId = new Map<string, string>();
+      if (userIds.length > 0) {
+        const { data: profRows } = await supabase
+          .from("profiles")
+          .select("id, full_name, email")
+          .in("id", userIds);
+        for (const p of profRows ?? []) {
+          nameByUserId.set(
+            p.id,
+            p.full_name?.trim() || p.email || "—"
+          );
+        }
+      }
+
+      adminCertificates = (passedRows ?? []).map((r) => ({
+        resultId: r.id,
+        userId: r.user_id,
+        personName: nameByUserId.get(r.user_id) ?? "—",
+        courseTitle: courseTitleById.get(r.course_id) ?? "—",
+        score: r.score,
+        issuedAt: r.created_at,
+        certLabel: formatAdminCertLabel(r.id, r.created_at),
+      }));
+    }
+
     return (
       <UzmanPanel
         profile={profile}
@@ -136,6 +197,8 @@ export default async function DashboardPage({
         quizzesByCourseId={quizzesByCourseId}
         workers={workers}
         progressRows={uzmanProgressRows}
+        specialists={specialists}
+        adminCertificates={adminCertificates}
         kayitBasarili={kayitBasarili}
       />
     );

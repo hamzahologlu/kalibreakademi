@@ -14,7 +14,10 @@ export async function userHasCourseContentAccess(
   course: { id: string; created_by: string | null }
 ): Promise<boolean> {
   const role = profile.role.toUpperCase();
-  if (role === "UZMAN" || role === "ADMIN") {
+  if (role === "ADMIN") {
+    return true;
+  }
+  if (role === "UZMAN") {
     return course.created_by != null && course.created_by === userId;
   }
   if (!profile.company_id) {
