@@ -40,7 +40,9 @@ AS $$
     'full_name', p.full_name,
     'email', p.email,
     'role', p.role::text,
-    'company_id', p.company_id
+    'company_id', p.company_id,
+    'tc_kimlik_no', p.tc_kimlik_no,
+    'phone', p.phone
   )
   FROM public.profiles p
   WHERE p.id = auth.uid()

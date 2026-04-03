@@ -6,6 +6,8 @@ export type MyProfileRow = {
   email: string;
   role: string;
   company_id: string | null;
+  tc_kimlik_no: string | null;
+  phone: string | null;
 };
 
 function rowFromRpcJson(data: unknown): MyProfileRow | null {
@@ -31,6 +33,12 @@ function rowFromRpcJson(data: unknown): MyProfileRow | null {
       p.company_id === null || p.company_id === undefined
         ? null
         : String(p.company_id),
+    tc_kimlik_no:
+      p.tc_kimlik_no === null || p.tc_kimlik_no === undefined
+        ? null
+        : String(p.tc_kimlik_no),
+    phone:
+      p.phone === null || p.phone === undefined ? null : String(p.phone),
   };
 }
 
@@ -71,7 +79,7 @@ export async function loadMyProfile(
 
   const { data: row, error: selError } = await supabase
     .from("profiles")
-    .select("id, full_name, email, role, company_id")
+    .select("id, full_name, email, role, company_id, tc_kimlik_no, phone")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -89,5 +97,7 @@ export async function loadMyProfile(
     email: row.email,
     role: row.role,
     company_id: row.company_id,
+    tc_kimlik_no: row.tc_kimlik_no ?? null,
+    phone: row.phone ?? null,
   };
 }

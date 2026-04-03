@@ -2,6 +2,8 @@
 
 export type PersonelExcelRow = {
   Ad: string;
+  "T.C. Kimlik": string;
+  Telefon: string;
   "E-posta": string;
   Şirket: string;
   "Atanan eğitim": number;

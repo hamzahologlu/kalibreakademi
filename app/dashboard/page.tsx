@@ -42,6 +42,8 @@ export default async function DashboardPage({
     email: row.email,
     role: row.role,
     company_id: row.company_id,
+    phone: row.phone,
+    tc_kimlik_no: row.tc_kimlik_no,
   };
 
   const isUzman =
@@ -86,7 +88,7 @@ export default async function DashboardPage({
 
     const { data: workerRows } = await supabase
       .from("profiles")
-      .select("id, email, full_name, company_id")
+      .select("id, email, full_name, company_id, phone, tc_kimlik_no")
       .eq("role", "WORKER")
       .order("full_name", { ascending: true, nullsFirst: false });
 
@@ -193,7 +195,6 @@ export default async function DashboardPage({
   return (
     <WorkerDashboard
       profile={profile}
-      userEmail={user.email ?? null}
       companyName={companyName}
       courses={workerCourses}
       kayitBasarili={kayitBasarili}
@@ -207,6 +208,26 @@ type QuizResultRow = {
   score: number;
   created_at: string;
 };
+
+function workerDisplayName(w: UzmanWorkerRow): string {
+  return (
+    w.full_name?.trim() ||
+    w.tc_kimlik_no?.trim() ||
+    w.phone?.trim() ||
+    w.email ||
+    "Personel"
+  );
+}
+
+function workerProgressSubtitle(w: UzmanWorkerRow): string {
+  const tc = w.tc_kimlik_no?.trim();
+  const ph = w.phone?.trim();
+  const parts: string[] = [];
+  if (tc) parts.push(`T.C. ${tc}`);
+  if (ph) parts.push(ph);
+  if (parts.length > 0) return parts.join(" · ");
+  return w.email ?? "—";
+}
 
 function buildUzmanProgressRows({
   workers,
@@ -238,8 +259,8 @@ function buildUzmanProgressRows({
 
   for (const w of workers) {
     const companyName = companyNameById.get(w.company_id) ?? "—";
-    const workerName =
-      w.full_name?.trim() || w.email || "Personel";
+    const workerName = workerDisplayName(w);
+    const workerEmail = workerProgressSubtitle(w);
 
     for (const course of courses) {
       if (!isAssigned(course.id, w.company_id)) continue;
@@ -249,7 +270,7 @@ function buildUzmanProgressRows({
         rows.push({
           key: `${w.id}-${course.id}`,
           workerName,
-          workerEmail: w.email,
+          workerEmail,
           companyName,
           courseTitle: course.title,
           status: "no_quiz",
@@ -269,7 +290,7 @@ function buildUzmanProgressRows({
         rows.push({
           key: `${w.id}-${course.id}`,
           workerName,
-          workerEmail: w.email,
+          workerEmail,
           companyName,
           courseTitle: course.title,
           status: "pending",
@@ -280,7 +301,7 @@ function buildUzmanProgressRows({
         rows.push({
           key: `${w.id}-${course.id}`,
           workerName,
-          workerEmail: w.email,
+          workerEmail,
           companyName,
           courseTitle: course.title,
           status: "failed",
@@ -291,7 +312,7 @@ function buildUzmanProgressRows({
         rows.push({
           key: `${w.id}-${course.id}`,
           workerName,
-          workerEmail: w.email,
+          workerEmail,
           companyName,
           courseTitle: course.title,
           status: "passed",

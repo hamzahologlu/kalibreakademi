@@ -1,8 +1,14 @@
 import { notFound, redirect } from "next/navigation";
 import { Award } from "lucide-react";
+import { WORKER_AUTH_EMAIL_DOMAIN } from "@/lib/auth-worker";
 import { loadMyProfile } from "@/lib/supabase/load-my-profile";
 import { createClient } from "@/lib/supabase/server";
 import { PrintButton } from "../print-button";
+
+function isSyntheticWorkerEmail(email: string | null | undefined): boolean {
+  const d = `@${WORKER_AUTH_EMAIL_DOMAIN}`.toLowerCase();
+  return Boolean(email?.toLowerCase().endsWith(d));
+}
 
 type PageProps = {
   params: Promise<{ courseId: string }>;
@@ -51,8 +57,12 @@ export default async function SertifikaPage({ params }: PageProps) {
 
   const displayName =
     profileRow?.full_name?.trim() ||
-    profileRow?.email ||
-    user.email ||
+    profileRow?.tc_kimlik_no?.trim() ||
+    profileRow?.phone?.trim() ||
+    (!isSyntheticWorkerEmail(user.email) ? user.email : null) ||
+    (!isSyntheticWorkerEmail(profileRow?.email)
+      ? profileRow?.email
+      : null) ||
     "Katılımcı";
   const title = course?.title ?? "Eğitim";
   const specialistName =

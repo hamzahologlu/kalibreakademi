@@ -1,7 +1,42 @@
--- Kayıt sonrası profiles — reg_type: worker | uzman
--- Personel metadata: tc_kimlik_no, phone, company_id
+-- Personel: T.C. kimlik + telefon (şifre); profiles.tc_kimlik_no, profiles.phone
+-- get_my_profile_row + handle_new_user güncellemesi
 --
--- migration-profiles-worker-tc-phone.sql ile senkron tutun.
+-- ÖNEMLİ: Supabase Dashboard → Authentication → Providers → Email
+-- "Confirm email" genelde KAPALI olmalıdır; personelin gerçek e-postası yoktur.
+--
+-- Supabase SQL Editor'da bir kez çalıştırın.
+
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS tc_kimlik_no TEXT,
+  ADD COLUMN IF NOT EXISTS phone TEXT;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_tc_kimlik_no_unique
+  ON public.profiles (tc_kimlik_no)
+  WHERE tc_kimlik_no IS NOT NULL;
+
+CREATE OR REPLACE FUNCTION public.get_my_profile_row()
+RETURNS jsonb
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT jsonb_build_object(
+    'id', p.id,
+    'full_name', p.full_name,
+    'email', p.email,
+    'role', p.role::text,
+    'company_id', p.company_id,
+    'tc_kimlik_no', p.tc_kimlik_no,
+    'phone', p.phone
+  )
+  FROM public.profiles p
+  WHERE p.id = auth.uid()
+  LIMIT 1;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_my_profile_row() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_my_profile_row() TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger

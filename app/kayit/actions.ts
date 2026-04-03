@@ -1,5 +1,12 @@
 "use server";
 
+import {
+  isValidTcKimlikNo,
+  normalizePhoneDigits,
+  normalizeTcKimlikNo,
+  validateWorkerPhoneDigits,
+  workerSyntheticEmail,
+} from "@/lib/auth-worker";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -19,24 +26,32 @@ export async function registerWorker(
   formData: FormData
 ): Promise<RegisterState> {
   const full_name = String(formData.get("full_name") ?? "").trim();
-  const email = String(formData.get("email") ?? "")
-    .trim()
-    .toLowerCase();
-  const password = String(formData.get("password") ?? "");
+  const tcRaw = String(formData.get("tc_kimlik_no") ?? "");
+  const phoneRaw = String(formData.get("phone") ?? "");
   const invite_code = String(formData.get("invite_code") ?? "").trim();
+
+  const tcDigits = normalizeTcKimlikNo(tcRaw);
+  const phoneDigits = normalizePhoneDigits(phoneRaw);
 
   if (full_name.length < 2) {
     return { error: "Ad Soyad en az 2 karakter olmalıdır." };
   }
-  if (!email.includes("@")) {
-    return { error: "Geçerli bir e-posta adresi girin." };
+  if (!isValidTcKimlikNo(tcDigits)) {
+    return {
+      error:
+        "Geçerli bir T.C. Kimlik Numarası girin (11 hane, kontrol rakamları doğru olmalı).",
+    };
   }
-  if (password.length < 6) {
-    return { error: "Şifre en az 6 karakter olmalıdır." };
+  const phoneErr = validateWorkerPhoneDigits(phoneDigits);
+  if (phoneErr) {
+    return { error: phoneErr };
   }
   if (!invite_code) {
     return { error: "Firma kodu gerekli." };
   }
+
+  const authEmail = workerSyntheticEmail(tcDigits);
+  const password = phoneDigits;
 
   const supabase = await createClient();
 
@@ -60,13 +75,15 @@ export async function registerWorker(
   const companyId = companyRow.id;
 
   const { data: authData, error: signUpError } = await supabase.auth.signUp({
-    email,
+    email: authEmail,
     password,
     options: {
       data: {
         full_name,
         company_id: companyId,
         reg_type: REG_WORKER,
+        tc_kimlik_no: tcDigits,
+        phone: phoneDigits,
       },
     },
   });
@@ -78,7 +95,10 @@ export async function registerWorker(
       m.includes("registered") ||
       m.includes("exists")
     ) {
-      return { error: "Bu e-posta ile zaten kayıt var." };
+      return {
+        error:
+          "Bu T.C. Kimlik Numarası ile zaten kayıt var. Girişte aynı numarayı kullanın.",
+      };
     }
     return { error: signUpError.message };
   }

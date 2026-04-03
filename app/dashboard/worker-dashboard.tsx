@@ -28,11 +28,12 @@ type ProfileSlice = {
   email: string | null;
   role: string | null;
   company_id: string | null;
+  tc_kimlik_no: string | null;
+  phone: string | null;
 };
 
 type Props = {
   profile: ProfileSlice | null;
-  userEmail: string | null;
   /** profiles.company_id ile eşleşen şirket adı */
   companyName: string | null;
   courses: WorkerCourseItem[];
@@ -61,7 +62,6 @@ function roleLabelForWorker(role: string | null | undefined): string {
 
 export function WorkerDashboard({
   profile,
-  userEmail,
   companyName,
   courses,
   kayitBasarili,
@@ -107,13 +107,21 @@ export function WorkerDashboard({
           </p>
         </section>
 
-        <dl className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <dl className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
             <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-              E-posta
+              T.C. Kimlik No
             </dt>
-            <dd className="mt-1 break-all text-sm text-zinc-200">
-              {profile?.email ?? userEmail ?? "—"}
+            <dd className="mt-1 font-mono text-sm text-zinc-200">
+              {profile?.tc_kimlik_no ?? "—"}
+            </dd>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
+            <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              Telefon
+            </dt>
+            <dd className="mt-1 font-mono text-sm text-zinc-200">
+              {profile?.phone ?? "—"}
             </dd>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
@@ -124,7 +132,7 @@ export function WorkerDashboard({
               {roleLabelForWorker(profile?.role)}
             </dd>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6 sm:col-span-2 lg:col-span-1">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
             <dt className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
               <Building2 className="h-3.5 w-3.5 text-cyan-400/80" aria-hidden />
               Şirket

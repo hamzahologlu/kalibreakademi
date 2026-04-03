@@ -54,6 +54,8 @@ export type UzmanWorkerRow = {
   email: string;
   full_name: string | null;
   company_id: string;
+  tc_kimlik_no: string | null;
+  phone: string | null;
 };
 
 export type UzmanProgressRow = {
@@ -170,8 +172,16 @@ export function UzmanPanel({
       list = list.filter((w) => {
         const name = (w.full_name ?? "").toLocaleLowerCase("tr-TR");
         const email = w.email.toLocaleLowerCase("tr-TR");
+        const tc = (w.tc_kimlik_no ?? "").toLowerCase();
+        const ph = (w.phone ?? "").toLowerCase();
         const co = resolveCo(w.company_id).toLocaleLowerCase("tr-TR");
-        return name.includes(q) || email.includes(q) || co.includes(q);
+        return (
+          name.includes(q) ||
+          email.includes(q) ||
+          tc.includes(q) ||
+          ph.includes(q) ||
+          co.includes(q)
+        );
       });
     }
     return list;
@@ -209,6 +219,8 @@ export function UzmanPanel({
       await downloadPersonelExcel(
         filteredWorkers.map((w) => ({
           Ad: w.full_name?.trim() || "—",
+          "T.C. Kimlik": w.tc_kimlik_no?.trim() || "—",
+          Telefon: w.phone?.trim() || "—",
           "E-posta": w.email,
           Şirket: companyName(w.company_id),
           "Atanan eğitim": assignedCourseCountForCompany(w.company_id),
@@ -697,12 +709,15 @@ export function UzmanPanel({
               ) : (
                 <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02]">
                   <div className="overflow-x-auto">
-                    <table className="w-full min-w-[640px] text-left text-sm">
+                    <table className="w-full min-w-[900px] text-left text-sm">
                       <thead>
                         <tr className="border-b border-white/10 bg-white/[0.04] text-xs uppercase tracking-wide text-zinc-500">
                           <th className="px-4 py-3 font-medium sm:px-6">Ad</th>
                           <th className="px-4 py-3 font-medium sm:px-6">
-                            E-posta
+                            T.C. Kimlik
+                          </th>
+                          <th className="px-4 py-3 font-medium sm:px-6">
+                            Telefon
                           </th>
                           <th className="px-4 py-3 font-medium sm:px-6">
                             Şirket
@@ -721,8 +736,11 @@ export function UzmanPanel({
                             <td className="px-4 py-3.5 font-medium text-white sm:px-6">
                               {w.full_name?.trim() || "—"}
                             </td>
-                            <td className="px-4 py-3.5 text-zinc-400 sm:px-6">
-                              {w.email}
+                            <td className="px-4 py-3.5 font-mono text-zinc-300 sm:px-6">
+                              {w.tc_kimlik_no?.trim() || "—"}
+                            </td>
+                            <td className="px-4 py-3.5 font-mono text-zinc-400 sm:px-6">
+                              {w.phone?.trim() || "—"}
                             </td>
                             <td className="px-4 py-3.5 text-zinc-300 sm:px-6">
                               {companyName(w.company_id)}

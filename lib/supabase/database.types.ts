@@ -13,6 +13,10 @@ export type ProfileRow = {
   company_id: string | null;
   /** İSG Uzmanlık numarası (genelde UZMAN) */
   isg_license_number: string | null;
+  /** Personel: T.C. kimlik (WORKER) */
+  tc_kimlik_no: string | null;
+  /** Personel: telefon, giriş şifresi olarak kullanılır */
+  phone: string | null;
 };
 
 export type CourseRow = {

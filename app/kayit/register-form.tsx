@@ -12,6 +12,7 @@ import {
   Loader2,
   Lock,
   Mail,
+  Phone,
   User,
   Users,
 } from "lucide-react";
@@ -75,44 +76,50 @@ function WorkerRegisterForm() {
 
       <div className="space-y-2">
         <label
-          htmlFor="w_email"
+          htmlFor="w_tc_kimlik_no"
           className="flex items-center gap-2 text-sm font-medium text-zinc-300"
         >
-          <Mail className="h-4 w-4 shrink-0 text-violet-400" aria-hidden />
-          E-posta
+          <IdCard className="h-4 w-4 shrink-0 text-violet-400" aria-hidden />
+          T.C. Kimlik No
         </label>
         <input
-          id="w_email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          inputMode="email"
+          id="w_tc_kimlik_no"
+          name="tc_kimlik_no"
+          type="text"
+          autoComplete="off"
+          inputMode="numeric"
+          pattern="\d*"
           required
           disabled={isPending}
-          placeholder="ornek@sirket.com"
-          className="min-h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-base text-zinc-100 placeholder:text-zinc-500 outline-none transition focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 disabled:opacity-50 sm:min-h-11 sm:text-sm"
+          maxLength={11}
+          placeholder="11 hane — girişte kullanıcı adınız bu numara olacak"
+          className="min-h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 font-mono text-base text-zinc-100 placeholder:text-zinc-500 outline-none transition focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 disabled:opacity-50 sm:min-h-11 sm:text-sm"
         />
       </div>
 
       <div className="space-y-2">
         <label
-          htmlFor="w_password"
+          htmlFor="w_phone"
           className="flex items-center gap-2 text-sm font-medium text-zinc-300"
         >
-          <Lock className="h-4 w-4 shrink-0 text-violet-400" aria-hidden />
-          Şifre
+          <Phone className="h-4 w-4 shrink-0 text-violet-400" aria-hidden />
+          Telefon No
         </label>
         <input
-          id="w_password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
+          id="w_phone"
+          name="phone"
+          type="tel"
+          autoComplete="tel"
+          inputMode="tel"
           required
-          minLength={6}
           disabled={isPending}
-          placeholder="En az 6 karakter"
+          placeholder="Cep veya sabit — girişte şifreniz bu numaranın rakamları olacak"
           className="min-h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-base text-zinc-100 placeholder:text-zinc-500 outline-none transition focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 disabled:opacity-50 sm:min-h-11 sm:text-sm"
         />
+        <p className="text-xs leading-relaxed text-zinc-500">
+          Şifre olarak kayıtta yazdığınız numaranın yalnızca rakamları kullanılır
+          (ör. 0532… ile 532… aynıdır). Girişte de aynı numarayı girmeniz yeterlidir.
+        </p>
       </div>
 
       <div className="space-y-2">
