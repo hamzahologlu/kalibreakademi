@@ -1,3 +1,6 @@
+/**
+ * Next.js uygulama kodu — Supabase SQL Editor’da ÇALIŞTIRMAYIN.
+ */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { MyProfileRow } from "@/lib/supabase/load-my-profile";
 
