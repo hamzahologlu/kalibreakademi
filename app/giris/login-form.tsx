@@ -17,7 +17,7 @@ import {
   Users,
 } from "lucide-react";
 import {
-  isValidTcKimlikNo,
+  isPlausibleWorkerLoginTc,
   normalizePhoneDigits,
   normalizeTcKimlikNo,
   workerSyntheticEmail,
@@ -92,9 +92,9 @@ export function LoginForm() {
 
     if (tab === "personel") {
       const tcDigits = normalizeTcKimlikNo(workerTc);
-      if (!isValidTcKimlikNo(tcDigits)) {
+      if (!isPlausibleWorkerLoginTc(tcDigits)) {
         const msg =
-          "Geçerli bir T.C. Kimlik Numarası girin (11 hane, kontrol rakamları doğru olmalı).";
+          "11 haneli T.C. Kimlik Numaranızı girin (yalnızca rakam, ilk rakam 0 olamaz).";
         setFormError(msg);
         toast.error(msg);
         return;

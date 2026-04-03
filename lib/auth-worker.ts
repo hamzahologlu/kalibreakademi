@@ -21,6 +21,20 @@ export function workerSyntheticEmail(tcDigits: string): string {
 /**
  * Türkiye Cumhuriyeti kimlik no algoritması (11 hane).
  */
+/**
+ * Personel girişi: kayıt sırasında isValidTcKimlikNo kullanılır; girişte checksum
+ * şart değildir (veritabanına elle / eski süreçle giren numaralar da oturum açabilsin).
+ */
+export function isPlausibleWorkerLoginTc(digits: string): boolean {
+  if (!/^[1-9]\d{10}$/.test(digits)) {
+    return false;
+  }
+  if (new Set(digits.split("")).size === 1) {
+    return false;
+  }
+  return true;
+}
+
 export function isValidTcKimlikNo(digits: string): boolean {
   if (!/^\d{11}$/.test(digits)) {
     return false;
