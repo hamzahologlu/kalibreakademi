@@ -2,14 +2,22 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error(
+      "[middleware] Eksik ortam: NEXT_PUBLIC_SUPABASE_URL veya NEXT_PUBLIC_SUPABASE_ANON_KEY (Vercel Project Settings → Environment Variables)"
+    );
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
+  try {
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -26,10 +34,13 @@ export async function middleware(request: NextRequest) {
           );
         },
       },
-    }
-  );
+    });
 
-  await supabase.auth.getUser();
+    await supabase.auth.getUser();
+  } catch (e) {
+    console.error("[middleware] Supabase oturum okunamadı:", e);
+    return NextResponse.next({ request });
+  }
 
   return supabaseResponse;
 }
