@@ -368,9 +368,7 @@ export function UzmanPanel({
         </div>
 
         <dl
-          className={`mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 ${
-            userRole === "ADMIN" ? "xl:grid-cols-6" : "xl:grid-cols-5"
-          }`}
+          className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
         >
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
             <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
@@ -396,14 +394,6 @@ export function UzmanPanel({
               {companies.length}
             </dd>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-            <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-              İSG lisans no
-            </dt>
-            <dd className="mt-1 break-all font-mono text-sm text-zinc-200 sm:text-base">
-              {profile?.isg_license_number?.trim() || "—"}
-            </dd>
-          </div>
           {userRole === "ADMIN" ? (
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
               <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
@@ -413,7 +403,16 @@ export function UzmanPanel({
                 {specialists.length}
               </dd>
             </div>
-          ) : null}
+          ) : (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+              <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                İSG lisans no
+              </dt>
+              <dd className="mt-1 break-all font-mono text-sm text-zinc-200 sm:text-base">
+                {profile?.isg_license_number?.trim() || "—"}
+              </dd>
+            </div>
+          )}
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
             <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
               Personel
