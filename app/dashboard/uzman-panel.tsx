@@ -12,13 +12,17 @@ import {
   Eye,
   FileDown,
   GraduationCap,
+  LayoutDashboard,
   Layers,
+  Mail,
   Pencil,
   Play,
   Search,
+  Shield,
   Sparkles,
   Trash2,
   User,
+  UserCircle2,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -322,9 +326,38 @@ export function UzmanPanel({
     });
   };
 
+  const isAdmin = userRole === "ADMIN";
+
+  function scrollAdminTo(anchorId: string) {
+    document.getElementById(anchorId)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
+
+  const adminNavItems: { id: string; label: string }[] = [
+    { id: "admin-overview", label: "Özet" },
+    { id: "admin-courses", label: "Eğitimler" },
+    { id: "admin-companies", label: "Şirketler" },
+    { id: "admin-specialists", label: "Uzmanlar" },
+    { id: "admin-personnel", label: "Personel" },
+    { id: "admin-certificates", label: "Sertifikalar" },
+    { id: "admin-progress", label: "İlerleme" },
+  ];
+
   return (
     <div className="min-h-full bg-zinc-950 text-zinc-50">
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
+      {isAdmin ? (
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-x-0 top-0 h-80 bg-[radial-gradient(ellipse_75%_60%_at_50%_-25%,rgba(99,102,241,0.18),transparent_55%),radial-gradient(ellipse_50%_40%_at_100%_0%,rgba(6,182,212,0.08),transparent)]"
+        />
+      ) : null}
+      <main
+        className={`relative mx-auto px-4 py-8 sm:px-6 sm:py-12 ${
+          isAdmin ? "max-w-7xl" : "max-w-6xl"
+        }`}
+      >
         {kayitBasarili ? (
           <div
             role="status"
@@ -347,84 +380,165 @@ export function UzmanPanel({
           </div>
         ) : null}
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-sm font-medium text-violet-300/90">
-              {userRole === "ADMIN" ? "Yönetim paneli" : "Uzman paneli"}
-            </p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-              Merhaba{profile?.full_name ? `, ${profile.full_name}` : ""}
-            </h1>
-            <p className="mt-2 max-w-prose text-sm text-zinc-400">
-              {userRole === "ADMIN"
-                ? "Tüm şirketler, eğitimler, uzmanlar ve personel kayıtlarını görüntüleyebilir; sistem genelinde atama ve düzenleme yapabilirsiniz."
-                : "Eğitim ve şirket atamalarını yönetin; personeli ve sınav ilerlemesini aşağıdan izleyin."}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-zinc-400">
-            <GraduationCap className="h-4 w-4 text-violet-400" aria-hidden />
-            {userRole === "ADMIN" ? "ADMIN" : profile?.role ?? "UZMAN"}
-          </div>
-        </div>
+        {isAdmin ? (
+          <nav
+            className="sticky top-0 z-40 -mx-4 mb-8 flex flex-wrap items-center gap-2 border-b border-white/10 bg-zinc-950/90 px-2 py-3 shadow-[0_12px_40px_-16px_rgba(0,0,0,0.65)] backdrop-blur-md sm:-mx-6 sm:px-3"
+            aria-label="Yönetim bölümleri"
+          >
+            {adminNavItems.map(({ id, label }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => scrollAdminTo(id)}
+                className="rounded-full border border-white/10 bg-white/[0.06] px-3.5 py-1.5 text-xs font-medium text-zinc-300 shadow-sm transition hover:border-violet-400/40 hover:bg-violet-500/15 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 sm:text-sm"
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
+        ) : null}
 
-        <dl
-          className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
+        <div
+          id={isAdmin ? "admin-overview" : undefined}
+          className={`space-y-8 ${isAdmin ? "scroll-mt-28" : ""}`}
         >
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-            <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-              E-posta
-            </dt>
-            <dd className="mt-1 break-all text-sm text-zinc-200">
-              {profile?.email ?? userEmail ?? "—"}
-            </dd>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="flex items-center gap-2 text-sm font-medium text-violet-300/90">
+                {isAdmin ? (
+                  <LayoutDashboard className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
+                ) : null}
+                {isAdmin ? "Yönetim paneli" : "Uzman paneli"}
+              </p>
+              <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+                Merhaba{profile?.full_name ? `, ${profile.full_name}` : ""}
+              </h1>
+              <p className="mt-2 max-w-prose text-sm text-zinc-400">
+                {isAdmin
+                  ? "Tüm şirketler, eğitimler, uzmanlar ve personel kayıtlarını görüntüleyebilir; sistem genelinde atama ve düzenleme yapabilirsiniz."
+                  : "Eğitim ve şirket atamalarını yönetin; personeli ve sınav ilerlemesini aşağıdan izleyin."}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-zinc-400">
+              {isAdmin ? (
+                <Shield className="h-4 w-4 text-violet-400" aria-hidden />
+              ) : (
+                <GraduationCap className="h-4 w-4 text-violet-400" aria-hidden />
+              )}
+              {isAdmin ? "ADMIN" : profile?.role ?? "UZMAN"}
+            </div>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-            <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-              Eğitim sayısı
-            </dt>
-            <dd className="mt-1 text-2xl font-semibold text-white">
-              {myCourses.length}
-            </dd>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-            <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-              Şirket sayısı
-            </dt>
-            <dd className="mt-1 text-2xl font-semibold text-white">
-              {companies.length}
-            </dd>
-          </div>
-          {userRole === "ADMIN" ? (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-              <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                Uzman / yönetici
-              </dt>
-              <dd className="mt-1 text-2xl font-semibold text-white">
-                {specialists.length}
-              </dd>
+
+          {isAdmin ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+              <div className="rounded-2xl border border-violet-500/25 bg-gradient-to-br from-violet-500/[0.12] via-white/[0.02] to-transparent p-5 ring-1 ring-inset ring-white/5">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                    Hesap
+                  </p>
+                  <Mail className="h-5 w-5 shrink-0 text-violet-400/85" aria-hidden />
+                </div>
+                <p className="mt-2 break-all text-sm font-medium leading-snug text-zinc-100">
+                  {profile?.email ?? userEmail ?? "—"}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-fuchsia-500/20 bg-gradient-to-br from-fuchsia-500/[0.10] via-white/[0.02] to-transparent p-5 ring-1 ring-inset ring-white/5">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                    Eğitimler
+                  </p>
+                  <BookMarked className="h-5 w-5 shrink-0 text-fuchsia-400/85" aria-hidden />
+                </div>
+                <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-white">
+                  {myCourses.length}
+                </p>
+                <p className="mt-1 text-xs text-zinc-500">Sistemdeki içerik</p>
+              </div>
+              <div className="rounded-2xl border border-cyan-500/25 bg-gradient-to-br from-cyan-500/[0.10] via-white/[0.02] to-transparent p-5 ring-1 ring-inset ring-white/5">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                    Şirketler
+                  </p>
+                  <Building2 className="h-5 w-5 shrink-0 text-cyan-400/85" aria-hidden />
+                </div>
+                <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-white">
+                  {companies.length}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-amber-500/25 bg-gradient-to-br from-amber-500/[0.10] via-white/[0.02] to-transparent p-5 ring-1 ring-inset ring-white/5">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                    Uzman / yönetici
+                  </p>
+                  <UserCircle2 className="h-5 w-5 shrink-0 text-amber-400/85" aria-hidden />
+                </div>
+                <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-white">
+                  {specialists.length}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/[0.10] via-white/[0.02] to-transparent p-5 ring-1 ring-inset ring-white/5">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                    Personel
+                  </p>
+                  <Users className="h-5 w-5 shrink-0 text-emerald-400/85" aria-hidden />
+                </div>
+                <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-white">
+                  {workers.length}
+                </p>
+              </div>
             </div>
           ) : (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-              <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                İSG lisans no
-              </dt>
-              <dd className="mt-1 break-all font-mono text-sm text-zinc-200 sm:text-base">
-                {profile?.isg_license_number?.trim() || "—"}
-              </dd>
-            </div>
+            <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+                <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  E-posta
+                </dt>
+                <dd className="mt-1 break-all text-sm text-zinc-200">
+                  {profile?.email ?? userEmail ?? "—"}
+                </dd>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+                <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  Eğitim sayısı
+                </dt>
+                <dd className="mt-1 text-2xl font-semibold text-white">
+                  {myCourses.length}
+                </dd>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+                <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  Şirket sayısı
+                </dt>
+                <dd className="mt-1 text-2xl font-semibold text-white">
+                  {companies.length}
+                </dd>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+                <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  İSG lisans no
+                </dt>
+                <dd className="mt-1 break-all font-mono text-sm text-zinc-200 sm:text-base">
+                  {profile?.isg_license_number?.trim() || "—"}
+                </dd>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+                <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  Personel
+                </dt>
+                <dd className="mt-1 text-2xl font-semibold text-white">
+                  {workers.length}
+                </dd>
+              </div>
+            </dl>
           )}
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-            <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-              Personel
-            </dt>
-            <dd className="mt-1 text-2xl font-semibold text-white">
-              {workers.length}
-            </dd>
-          </div>
-        </dl>
+        </div>
 
         {/* Eğitimlerim */}
-        <section className="mt-14">
+        <section
+          id={isAdmin ? "admin-courses" : undefined}
+          className={isAdmin ? "mt-14 scroll-mt-28" : "mt-14"}
+        >
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
               <BookMarked
@@ -587,7 +701,10 @@ export function UzmanPanel({
         </section>
 
         {/* Şirketler */}
-        <section className="mt-14">
+        <section
+          id={isAdmin ? "admin-companies" : undefined}
+          className={isAdmin ? "mt-14 scroll-mt-28" : "mt-14"}
+        >
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
               <Building2
@@ -679,7 +796,7 @@ export function UzmanPanel({
         </section>
 
         {userRole === "ADMIN" ? (
-          <section className="mt-14">
+          <section id="admin-specialists" className="mt-14 scroll-mt-28">
             <div className="mb-6 flex items-center gap-2">
               <User
                 className="h-6 w-6 text-amber-400"
@@ -738,7 +855,10 @@ export function UzmanPanel({
         ) : null}
 
         {/* Personel */}
-        <section className="mt-14">
+        <section
+          id={isAdmin ? "admin-personnel" : undefined}
+          className={isAdmin ? "mt-14 scroll-mt-28" : "mt-14"}
+        >
           <div className="mb-6 flex items-center gap-2">
             <Users className="h-6 w-6 text-emerald-400" strokeWidth={1.5} aria-hidden />
             <h2 className="text-xl font-semibold text-white">Personel</h2>
@@ -872,7 +992,7 @@ export function UzmanPanel({
         </section>
 
         {userRole === "ADMIN" ? (
-          <section className="mt-14">
+          <section id="admin-certificates" className="mt-14 scroll-mt-28">
             <div className="mb-6 flex items-center gap-2">
               <Award
                 className="h-6 w-6 text-amber-300"
@@ -947,7 +1067,10 @@ export function UzmanPanel({
         ) : null}
 
         {/* İlerleme */}
-        <section className="mt-14">
+        <section
+          id={isAdmin ? "admin-progress" : undefined}
+          className={isAdmin ? "mt-14 scroll-mt-28" : "mt-14"}
+        >
           <div className="mb-6 flex items-center gap-2">
             <BarChart3
               className="h-6 w-6 text-amber-400"
@@ -959,8 +1082,9 @@ export function UzmanPanel({
             </h2>
           </div>
           <p className="mb-6 max-w-2xl text-sm text-zinc-500">
-            Yalnızca şirketinize atanmış eğitimler için satır gösterilir. Puan,
-            personelin son sınav girişine göre hesaplanır.
+            {isAdmin
+              ? "Tüm atanmış eğitimler için personel bazında durum ve puan. Puan, personelin son sınav girişine göre hesaplanır."
+              : "Yalnızca şirketinize atanmış eğitimler için satır gösterilir. Puan, personelin son sınav girişine göre hesaplanır."}
           </p>
           {progressRows.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] px-6 py-12 text-center">
