@@ -51,6 +51,7 @@ export default async function DashboardPage({
     email: row.email,
     role: row.role,
     company_id: row.company_id,
+    isg_license_number: row.isg_license_number,
     phone: row.phone,
     tc_kimlik_no: row.tc_kimlik_no,
   };

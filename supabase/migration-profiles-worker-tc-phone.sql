@@ -27,6 +27,7 @@ AS $$
     'email', p.email,
     'role', p.role::text,
     'company_id', p.company_id,
+    'isg_license_number', p.isg_license_number,
     'tc_kimlik_no', p.tc_kimlik_no,
     'phone', p.phone
   )
