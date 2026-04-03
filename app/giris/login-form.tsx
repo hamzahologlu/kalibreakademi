@@ -20,6 +20,7 @@ import {
   isPlausibleWorkerLoginTc,
   normalizePhoneDigits,
   normalizeTcKimlikNo,
+  workerPhonePasswordVariants,
   workerSyntheticEmail,
 } from "@/lib/auth-worker";
 import { createClient } from "@/lib/supabase/client";
@@ -88,7 +89,7 @@ export function LoginForm() {
     setFormError(null);
 
     let email: string;
-    let password: string;
+    let personelPhoneVariants: string[] | null = null;
 
     if (tab === "personel") {
       const tcDigits = normalizeTcKimlikNo(workerTc);
@@ -107,7 +108,7 @@ export function LoginForm() {
         return;
       }
       email = workerSyntheticEmail(tcDigits);
-      password = phoneDigits;
+      personelPhoneVariants = workerPhonePasswordVariants(phoneDigits);
     } else {
       const trimmedEmail = uzmanEmail.trim();
       if (!trimmedEmail || !uzmanPassword) {
@@ -117,17 +118,41 @@ export function LoginForm() {
         return;
       }
       email = trimmedEmail;
-      password = uzmanPassword;
     }
 
     setPending(true);
     const supabase = createClient();
 
-    const { data: authData, error: authError } =
-      await supabase.auth.signInWithPassword({
+    let authData: Awaited<
+      ReturnType<typeof supabase.auth.signInWithPassword>
+    >["data"];
+    let authError: Awaited<
+      ReturnType<typeof supabase.auth.signInWithPassword>
+    >["error"];
+
+    if (tab === "personel" && personelPhoneVariants) {
+      authData = { user: null, session: null };
+      authError = null;
+      for (const password of personelPhoneVariants) {
+        const res = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (!res.error && res.data.user) {
+          authData = res.data;
+          authError = null;
+          break;
+        }
+        authError = res.error;
+      }
+    } else {
+      const res = await supabase.auth.signInWithPassword({
         email,
-        password,
+        password: uzmanPassword,
       });
+      authData = res.data;
+      authError = res.error;
+    }
 
     if (authError || !authData.user) {
       const raw = authError?.message ?? "";

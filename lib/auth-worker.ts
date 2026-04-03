@@ -19,8 +19,22 @@ export function workerSyntheticEmail(tcDigits: string): string {
 }
 
 /**
- * Türkiye Cumhuriyeti kimlik no algoritması (11 hane).
+ * Auth şifresi farklı biçimde kaydedilmiş olabilir (0532… vs 532…).
+ * Girişte sırayla denenir; kayıt tarafı değişmeden eski/elle ayarlı hesaplar açılır.
  */
+export function workerPhonePasswordVariants(normalizedDigits: string): string[] {
+  const d = normalizedDigits;
+  const out = new Set<string>();
+  out.add(d);
+  if (d.length === 11 && d.startsWith("0")) {
+    out.add(d.slice(1));
+  }
+  if (d.length === 10) {
+    out.add(`0${d}`);
+  }
+  return [...out];
+}
+
 /**
  * Personel girişi: kayıt sırasında isValidTcKimlikNo kullanılır; girişte checksum
  * şart değildir (veritabanına elle / eski süreçle giren numaralar da oturum açabilsin).
@@ -35,6 +49,7 @@ export function isPlausibleWorkerLoginTc(digits: string): boolean {
   return true;
 }
 
+/** Türkiye Cumhuriyeti kimlik no algoritması (11 hane). */
 export function isValidTcKimlikNo(digits: string): boolean {
   if (!/^\d{11}$/.test(digits)) {
     return false;

@@ -8,7 +8,7 @@
 -- ADIM 1 — profiles (aşağıdaki UPDATE)
 -- ADIM 2 — ZORUNLU: Supabase Dashboard → Authentication → Users → ilgili kullanıcı
 --   • Email: 50551714155@kalibre-worker.invalid
---   • Password: 05392949082  (telefonun tam rakam dizisi; giriş formunda aynı)
+--   • Password: 05392949082 veya 5392949082 (uygulama girişte ikisini de dener)
 --   SQL ile auth şifresi güvenilir biçimde set edilemez; Dashboard veya Admin API kullanın.
 
 UPDATE public.profiles
