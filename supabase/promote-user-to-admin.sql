@@ -1,14 +1,17 @@
 -- Hesabı ADMIN yapmak için (Supabase SQL Editor).
--- Aşağıdaki UUID değerini Authentication → Users → ilgili kullanıcının id’si ile değiştirin.
--- (profiles.id = auth.users.id)
+--
+-- ÖNERİLEN: Aşağıdaki e-posta adresini, yönetici olacak hesabın
+-- Authentication → Users veya profiles.email adresi ile değiştirin ve çalıştırın.
+-- Eşleşen satır yoksa hata almazsınız; RETURNING boş döner (adresi kontrol edin).
 
 UPDATE public.profiles
 SET role = 'ADMIN'
-WHERE id = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'::uuid
+WHERE lower(trim(email)) = lower(trim('yoneticinin-epostasi@ornek.com'))
 RETURNING id, email, full_name, role;
 
--- E-posta ile örnek:
+-- UUID ile (yalnızca gerçek kimlik: 0-9 ve a-f; "xxxxx..." placeholder HATA verir):
+--
 -- UPDATE public.profiles
 -- SET role = 'ADMIN'
--- WHERE lower(trim(email)) = lower(trim('yonetici@ornek.com'))
+-- WHERE id = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'::uuid
 -- RETURNING id, email, full_name, role;
