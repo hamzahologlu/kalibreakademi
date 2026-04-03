@@ -1,4 +1,5 @@
 -- Uzman / Admin: companies tablosuna INSERT
+-- auth_is_uzman_or_admin(): rls-uzman-rbac.sql veya fix-uzman-panel-companies-rls.sql
 ALTER TABLE public.companies ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "companies_insert_uzman_admin" ON public.companies;
@@ -9,10 +10,5 @@ CREATE POLICY "companies_insert_uzman_admin"
   TO authenticated
   WITH CHECK (
     created_by = auth.uid()
-    AND EXISTS (
-      SELECT 1
-      FROM public.profiles AS p
-      WHERE p.id = auth.uid()
-        AND p.role IN ('UZMAN', 'ADMIN')
-    )
+    AND public.auth_is_uzman_or_admin()
   );

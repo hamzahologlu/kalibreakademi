@@ -76,6 +76,38 @@ $$;
 REVOKE ALL ON FUNCTION public.auth_is_admin() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.auth_is_admin() TO authenticated;
 
+CREATE OR REPLACE FUNCTION public.company_visible_to_caller(
+  p_company_id uuid,
+  p_created_by uuid
+)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT
+    public.auth_is_admin()
+    OR (
+      public.auth_is_uzman_or_admin()
+      AND NOT public.auth_is_admin()
+      AND (
+        p_created_by = auth.uid()
+        OR EXISTS (
+          SELECT 1
+          FROM public.course_assignments AS ca
+          INNER JOIN public.courses AS c
+            ON c.id = ca.course_id
+           AND c.created_by = auth.uid()
+          WHERE ca.company_id = p_company_id
+        )
+      )
+    );
+$$;
+
+REVOKE ALL ON FUNCTION public.company_visible_to_caller(uuid, uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.company_visible_to_caller(uuid, uuid) TO authenticated;
+
 DROP POLICY IF EXISTS "courses_select_via_assignment" ON public.courses;
 DROP POLICY IF EXISTS "courses_select_worker_or_creator" ON public.courses;
 
@@ -90,30 +122,12 @@ CREATE POLICY "courses_select_worker_or_creator"
 
 DROP POLICY IF EXISTS "companies_select_uzman_admin" ON public.companies;
 
--- ADMIN: tüm şirketler. UZMAN: kendi eklediği veya kendi kursuna atanmış şirketler.
--- (fix-uzman-panel-companies-rls.sql ile aynı; auth_is_admin fix-rls dosyasında olmalı)
+-- SELECT: policy içinde doğrudan EXISTS kullanma (companies RLS özyinelemesi)
 CREATE POLICY "companies_select_uzman_admin"
   ON public.companies
   FOR SELECT
   TO authenticated
-  USING (
-    public.auth_is_admin()
-    OR (
-      public.auth_is_uzman_or_admin()
-      AND NOT public.auth_is_admin()
-      AND (
-        companies.created_by = auth.uid()
-        OR EXISTS (
-          SELECT 1
-          FROM public.course_assignments AS ca
-          INNER JOIN public.courses AS c
-            ON c.id = ca.course_id
-           AND c.created_by = auth.uid()
-          WHERE ca.company_id = companies.id
-        )
-      )
-    )
-  );
+  USING (public.company_visible_to_caller(id, created_by));
 
 DROP POLICY IF EXISTS "course_assignments_insert_by_creator" ON public.course_assignments;
 

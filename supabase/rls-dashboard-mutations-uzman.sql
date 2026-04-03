@@ -70,20 +70,8 @@ CREATE POLICY "companies_update_uzman_admin"
   ON public.companies
   FOR UPDATE
   TO authenticated
-  USING (
-    created_by = auth.uid()
-    OR EXISTS (
-      SELECT 1 FROM public.profiles AS p
-      WHERE p.id = auth.uid() AND p.role = 'ADMIN'
-    )
-  )
-  WITH CHECK (
-    created_by = auth.uid()
-    OR EXISTS (
-      SELECT 1 FROM public.profiles AS p
-      WHERE p.id = auth.uid() AND p.role = 'ADMIN'
-    )
-  );
+  USING (created_by = auth.uid() OR public.auth_is_admin())
+  WITH CHECK (created_by = auth.uid() OR public.auth_is_admin());
 
 -- companies DELETE
 DROP POLICY IF EXISTS "companies_delete_uzman_admin" ON public.companies;
@@ -92,10 +80,4 @@ CREATE POLICY "companies_delete_uzman_admin"
   ON public.companies
   FOR DELETE
   TO authenticated
-  USING (
-    created_by = auth.uid()
-    OR EXISTS (
-      SELECT 1 FROM public.profiles AS p
-      WHERE p.id = auth.uid() AND p.role = 'ADMIN'
-    )
-  );
+  USING (created_by = auth.uid() OR public.auth_is_admin());
