@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { PageBackBar } from "@/components/page-back-bar";
 import { questionsForQuizTaker } from "@/app/dashboard/quiz-types";
+import { userHasCourseContentAccess } from "@/lib/supabase/course-content-access";
 import { loadMyProfile } from "@/lib/supabase/load-my-profile";
 import { createClient } from "@/lib/supabase/server";
 import { QuizRunner } from "./quiz-runner";
@@ -22,29 +23,27 @@ export default async function SinavPage({ params }: PageProps) {
   }
 
   const profile = await loadMyProfile(supabase);
-
-  if (!profile?.company_id) {
-    notFound();
-  }
-
-  const { data: assignment } = await supabase
-    .from("course_assignments")
-    .select("id")
-    .eq("course_id", courseId)
-    .eq("company_id", profile.company_id)
-    .maybeSingle();
-
-  if (!assignment) {
+  if (!profile) {
     notFound();
   }
 
   const { data: course } = await supabase
     .from("courses")
-    .select("id, title")
+    .select("id, title, created_by")
     .eq("id", courseId)
     .maybeSingle();
 
   if (!course) {
+    notFound();
+  }
+
+  const allowed = await userHasCourseContentAccess(
+    supabase,
+    user.id,
+    profile,
+    course
+  );
+  if (!allowed) {
     notFound();
   }
 
