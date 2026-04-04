@@ -9,6 +9,7 @@ import {
   BookMarked,
   Building2,
   ClipboardList,
+  Clock,
   Eye,
   FileDown,
   GraduationCap,
@@ -84,6 +85,8 @@ export type AdminCertificateSummaryRow = {
 
 export type UzmanProgressRow = {
   key: string;
+  workerId: string;
+  courseId: string;
   workerName: string;
   workerEmail: string;
   companyName: string;
@@ -91,6 +94,20 @@ export type UzmanProgressRow = {
   status: "no_quiz" | "pending" | "failed" | "passed";
   scoreText: string | null;
   passingScore: number | null;
+  /** Denetim: eğitim sayfası süresi (migration sonrası) */
+  watchMinutes?: number;
+  sessionOpens?: number;
+  lastVideoAt?: string | null;
+  /** Sınav geçtiyse 100; değilse ~video süresi / 45 dk */
+  completionEstimatePct?: number | null;
+};
+
+export type AuthSessionDisplayRow = {
+  id: string;
+  workerName: string;
+  eventLabel: string;
+  createdAt: string;
+  userAgentShort: string | null;
 };
 
 type Props = {
@@ -104,6 +121,8 @@ type Props = {
   quizzesByCourseId: Record<string, QuizRow>;
   workers: UzmanWorkerRow[];
   progressRows: UzmanProgressRow[];
+  /** Personel giriş/çıkış kayıtları (migration-training-audit.sql) */
+  authActivityLog?: AuthSessionDisplayRow[];
   /** Yalnızca ADMIN — tüm uzman ve yönetici profilleri */
   specialists?: SpecialistSummaryRow[];
   /** Yalnızca ADMIN — başarılı sınavlar (sertifika özeti) */
@@ -122,10 +141,12 @@ export function UzmanPanel({
   quizzesByCourseId,
   workers,
   progressRows,
+  authActivityLog: authActivityLogProp,
   specialists: specialistsProp,
   adminCertificates: adminCertificatesProp,
   kayitBasarili,
 }: Props) {
+  const authActivityLog = authActivityLogProp ?? [];
   const specialists = specialistsProp ?? [];
   const adminCertificates = adminCertificatesProp ?? [];
   const router = useRouter();
@@ -342,6 +363,7 @@ export function UzmanPanel({
     { id: "admin-specialists", label: "Uzmanlar" },
     { id: "admin-personnel", label: "Personel" },
     { id: "admin-certificates", label: "Sertifikalar" },
+    { id: "admin-sessions", label: "Oturum" },
     { id: "admin-progress", label: "İlerleme" },
   ];
 
@@ -1066,7 +1088,80 @@ export function UzmanPanel({
           </section>
         ) : null}
 
-        {/* İlerleme */}
+        {/* Personel oturum kayıtları (giriş/çıkış) */}
+        <section
+          id={isAdmin ? "admin-sessions" : "audit-sessions"}
+          className={isAdmin ? "mt-14 scroll-mt-28" : "mt-14"}
+        >
+          <div className="mb-6 flex items-center gap-2">
+            <Clock
+              className="h-6 w-6 text-sky-400"
+              strokeWidth={1.5}
+              aria-hidden
+            />
+            <h2 className="text-xl font-semibold text-white">
+              Personel oturum kayıtları
+            </h2>
+          </div>
+          <p className="mb-6 max-w-2xl text-sm text-zinc-500">
+            Platforma giriş ve çıkış zamanları (personel hesapları). Kayıtlar
+            başarılı giriş ve «Çıkış» ile oluşur; yasal denetim için saklanır.
+          </p>
+          {authActivityLog.length === 0 ? (
+            <p className="text-sm text-zinc-500">
+              Henüz kayıt yok veya tablo henüz oluşturulmadı (Supabase’de{" "}
+              <code className="rounded bg-white/10 px-1 text-xs">
+                migration-training-audit.sql
+              </code>{" "}
+              çalıştırın).
+            </p>
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02]">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[720px] text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-white/10 bg-white/[0.04] text-xs uppercase tracking-wide text-zinc-500">
+                      <th className="px-4 py-3 font-medium sm:px-6">Zaman</th>
+                      <th className="px-4 py-3 font-medium sm:px-6">
+                        Personel
+                      </th>
+                      <th className="px-4 py-3 font-medium sm:px-6">Olay</th>
+                      <th className="px-4 py-3 font-medium sm:px-6">
+                        Tarayıcı / cihaz (kısa)
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {authActivityLog.map((row) => (
+                      <tr
+                        key={row.id}
+                        className="transition hover:bg-white/[0.03]"
+                      >
+                        <td className="whitespace-nowrap px-4 py-3.5 text-zinc-400 sm:px-6">
+                          {new Date(row.createdAt).toLocaleString("tr-TR", {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          })}
+                        </td>
+                        <td className="px-4 py-3.5 font-medium text-white sm:px-6">
+                          {row.workerName}
+                        </td>
+                        <td className="px-4 py-3.5 text-zinc-300 sm:px-6">
+                          {row.eventLabel}
+                        </td>
+                        <td className="max-w-xs truncate px-4 py-3.5 text-xs text-zinc-500 sm:px-6">
+                          {row.userAgentShort ?? "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* İlerleme + eğitim süresi denetimi */}
         <section
           id={isAdmin ? "admin-progress" : undefined}
           className={isAdmin ? "mt-14 scroll-mt-28" : "mt-14"}
@@ -1078,13 +1173,13 @@ export function UzmanPanel({
               aria-hidden
             />
             <h2 className="text-xl font-semibold text-white">
-              Eğitim ilerlemesi
+              Eğitim ilerlemesi ve izlenme
             </h2>
           </div>
           <p className="mb-6 max-w-2xl text-sm text-zinc-500">
             {isAdmin
-              ? "Tüm atanmış eğitimler için personel bazında durum ve puan. Puan, personelin son sınav girişine göre hesaplanır."
-              : "Yalnızca şirketinize atanmış eğitimler için satır gösterilir. Puan, personelin son sınav girişine göre hesaplanır."}
+              ? "Atanmış eğitimlerde sınav durumu, puan ve (personelin eğitim sayfasında geçirdiği) tahmini izlenme süresi. Tamamlanma oranı: sınav geçildiyse %100; aksi halde ~45 dk videoya göre tahmini içerik ilerlemesi. Ölçme sonuçları her sınav denemesi için veritabanında saklanır (puan, doğru sayısı ve şık seçimleri)."
+              : "Şirketinize atanmış eğitimlerde sınav ve izlenme özeti. Personel eğitim sayfasında sekme açıkken süre toplanır; sınav cevapları kayıt altındadır."}
           </p>
           {progressRows.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.02] px-6 py-12 text-center">
@@ -1097,7 +1192,7 @@ export function UzmanPanel({
           ) : (
             <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02]">
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[900px] text-left text-sm">
+                <table className="w-full min-w-[1100px] text-left text-sm">
                   <thead>
                     <tr className="border-b border-white/10 bg-white/[0.04] text-xs uppercase tracking-wide text-zinc-500">
                       <th className="px-4 py-3 font-medium sm:px-6">Personel</th>
@@ -1106,6 +1201,16 @@ export function UzmanPanel({
                       <th className="px-4 py-3 font-medium sm:px-6">Durum</th>
                       <th className="px-4 py-3 font-medium sm:px-6">Puan</th>
                       <th className="px-4 py-3 font-medium sm:px-6">Baraj</th>
+                      <th className="px-4 py-3 font-medium sm:px-6">
+                        Video (dk)
+                      </th>
+                      <th className="px-4 py-3 font-medium sm:px-6">Giriş</th>
+                      <th className="px-4 py-3 font-medium sm:px-6">
+                        Son izleme
+                      </th>
+                      <th className="px-4 py-3 font-medium sm:px-6">
+                        Tahmini %
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
@@ -1137,6 +1242,32 @@ export function UzmanPanel({
                         <td className="px-4 py-3.5 text-zinc-500 sm:px-6">
                           {row.passingScore != null
                             ? `%${row.passingScore}`
+                            : "—"}
+                        </td>
+                        <td className="px-4 py-3.5 tabular-nums text-zinc-400 sm:px-6">
+                          {row.watchMinutes != null && row.watchMinutes > 0
+                            ? row.watchMinutes
+                            : "—"}
+                        </td>
+                        <td className="px-4 py-3.5 tabular-nums text-zinc-400 sm:px-6">
+                          {row.sessionOpens != null && row.sessionOpens > 0
+                            ? row.sessionOpens
+                            : "—"}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3.5 text-zinc-500 sm:px-6">
+                          {row.lastVideoAt
+                            ? new Date(row.lastVideoAt).toLocaleString(
+                                "tr-TR",
+                                {
+                                  dateStyle: "short",
+                                  timeStyle: "short",
+                                }
+                              )
+                            : "—"}
+                        </td>
+                        <td className="px-4 py-3.5 tabular-nums text-zinc-300 sm:px-6">
+                          {row.completionEstimatePct != null
+                            ? `%${row.completionEstimatePct}`
                             : "—"}
                         </td>
                       </tr>

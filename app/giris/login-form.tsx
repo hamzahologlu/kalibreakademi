@@ -23,6 +23,7 @@ import {
   workerPhonePasswordVariants,
   workerSyntheticEmail,
 } from "@/lib/auth-worker";
+import { recordAuthSignIn } from "@/app/auth/log-activity-action";
 import { createClient } from "@/lib/supabase/client";
 import type { UserRole } from "@/lib/supabase";
 
@@ -220,6 +221,7 @@ export function LoginForm() {
       toast.success("Giriş başarılı. Panele yönlendiriliyorsunuz.");
     }
 
+    await recordAuthSignIn();
     router.push("/dashboard");
     router.refresh();
     setPending(false);

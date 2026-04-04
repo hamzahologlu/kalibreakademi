@@ -60,4 +60,24 @@ export type QuizResultRow = {
   correct_count: number;
   total_questions: number;
   created_at: string;
+  /** Şık indeksleri (0–3); migration-training-audit.sql sonrası */
+  answer_indices?: number[] | null;
+};
+
+export type CourseLearningProgressRow = {
+  user_id: string;
+  course_id: string;
+  total_watch_seconds: number;
+  session_opens: number;
+  last_opened_at: string | null;
+  last_heartbeat_at: string | null;
+};
+
+export type AuthActivityLogRow = {
+  id: string;
+  user_id: string;
+  event_type: "sign_in" | "sign_out";
+  created_at: string;
+  user_agent: string | null;
+  ip_address: string | null;
 };

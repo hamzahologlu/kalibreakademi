@@ -96,7 +96,9 @@ export async function submitQuizResult(input: {
   const passingScore = quiz.passing_score;
   const passed = score >= passingScore;
 
-  const { error: insertError } = await supabase.from("quiz_results").insert({
+  const answerIndices = answers.map((a) => a as number);
+
+  const baseRow = {
     user_id: user.id,
     course_id: courseId,
     quiz_id: quiz.id,
@@ -104,7 +106,19 @@ export async function submitQuizResult(input: {
     passed,
     correct_count: correct,
     total_questions: total,
-  });
+  };
+
+  let insertError = (
+    await supabase.from("quiz_results").insert({
+      ...baseRow,
+      answer_indices: answerIndices,
+    })
+  ).error;
+
+  const msg = insertError?.message?.toLowerCase() ?? "";
+  if (insertError && msg.includes("answer_indices")) {
+    insertError = (await supabase.from("quiz_results").insert(baseRow)).error;
+  }
 
   if (insertError) {
     return { ok: false, error: insertError.message };

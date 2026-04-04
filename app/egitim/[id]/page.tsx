@@ -6,6 +6,7 @@ import {
   ListVideo,
   User,
 } from "lucide-react";
+import { CourseLearningTracker } from "@/components/course-learning-tracker";
 import { PageBackBar } from "@/components/page-back-bar";
 import { userHasCourseContentAccess } from "@/lib/supabase/course-content-access";
 import { loadMyProfile } from "@/lib/supabase/load-my-profile";
@@ -83,8 +84,11 @@ export default async function EgitimPage({ params }: PageProps) {
 
   const hasPlayableVideo = Boolean(embedSrc || (watchHref && directVideo));
 
+  const trackLearning = profile.role === "WORKER";
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50">
+      {trackLearning ? <CourseLearningTracker courseId={id} /> : null}
       <div
         aria-hidden
         className="pointer-events-none fixed inset-x-0 top-0 h-64 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(120,119,198,0.12),transparent)]"

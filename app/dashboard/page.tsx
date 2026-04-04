@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   UzmanPanel,
   type AdminCertificateSummaryRow,
+  type AuthSessionDisplayRow,
   type SpecialistSummaryRow,
   type UzmanProgressRow,
   type UzmanWorkerRow,
@@ -138,6 +139,50 @@ export default async function DashboardPage({
       companyNameById,
     });
 
+    type LearningSlim = {
+      user_id: string;
+      course_id: string;
+      total_watch_seconds: number;
+      session_opens: number;
+      last_opened_at: string | null;
+      last_heartbeat_at: string | null;
+    };
+
+    let learningRows: LearningSlim[] = [];
+    if (courseIds.length > 0) {
+      const { data: lr, error: lrErr } = await supabase
+        .from("course_learning_progress")
+        .select(
+          "user_id, course_id, total_watch_seconds, session_opens, last_opened_at, last_heartbeat_at"
+        )
+        .in("course_id", courseIds);
+      if (!lrErr) learningRows = (lr ?? []) as LearningSlim[];
+    }
+
+    const workerIds = workers.map((w) => w.id);
+    let authLogRaw: {
+      id: string;
+      user_id: string;
+      event_type: string;
+      created_at: string;
+      user_agent: string | null;
+    }[] = [];
+    if (workerIds.length > 0) {
+      const { data: ar, error: arErr } = await supabase
+        .from("auth_activity_log")
+        .select("id, user_id, event_type, created_at, user_agent")
+        .in("user_id", workerIds)
+        .order("created_at", { ascending: false })
+        .limit(400);
+      if (!arErr) authLogRaw = ar ?? [];
+    }
+
+    const progressRowsMerged = mergeLearningIntoProgressRows(
+      uzmanProgressRows,
+      learningRows
+    );
+    const authActivityLog = buildAuthSessionDisplayRows(authLogRaw, workers);
+
     let specialists: SpecialistSummaryRow[] = [];
     let adminCertificates: AdminCertificateSummaryRow[] = [];
 
@@ -197,7 +242,8 @@ export default async function DashboardPage({
         assignments={assignments}
         quizzesByCourseId={quizzesByCourseId}
         workers={workers}
-        progressRows={uzmanProgressRows}
+        progressRows={progressRowsMerged}
+        authActivityLog={authActivityLog}
         specialists={specialists}
         adminCertificates={adminCertificates}
         kayitBasarili={kayitBasarili}
@@ -273,6 +319,69 @@ type QuizResultRow = {
   created_at: string;
 };
 
+function mergeLearningIntoProgressRows(
+  rows: UzmanProgressRow[],
+  learning: {
+    user_id: string;
+    course_id: string;
+    total_watch_seconds: number;
+    session_opens: number;
+    last_opened_at: string | null;
+    last_heartbeat_at: string | null;
+  }[]
+): UzmanProgressRow[] {
+  const map = new Map(
+    learning.map((l) => [`${l.user_id}::${l.course_id}`, l] as const)
+  );
+  const assumedVideoSec = 45 * 60;
+  return rows.map((row) => {
+    const lp = map.get(`${row.workerId}::${row.courseId}`);
+    const sec = lp?.total_watch_seconds ?? 0;
+    let completionEstimatePct: number | null = null;
+    if (row.status === "passed") completionEstimatePct = 100;
+    else if (sec > 0) {
+      completionEstimatePct = Math.min(
+        99,
+        Math.round((sec / assumedVideoSec) * 100)
+      );
+    }
+    return {
+      ...row,
+      watchMinutes: Math.round(sec / 60),
+      sessionOpens: lp?.session_opens ?? 0,
+      lastVideoAt: lp?.last_heartbeat_at ?? lp?.last_opened_at ?? null,
+      completionEstimatePct,
+    };
+  });
+}
+
+function buildAuthSessionDisplayRows(
+  log: {
+    id: string;
+    user_id: string;
+    event_type: string;
+    created_at: string;
+    user_agent: string | null;
+  }[],
+  workers: UzmanWorkerRow[]
+): AuthSessionDisplayRow[] {
+  const nameById = new Map(
+    workers.map((w) => [w.id, workerDisplayName(w)] as const)
+  );
+  return log.slice(0, 250).map((r) => ({
+    id: r.id,
+    workerName: nameById.get(r.user_id) ?? "—",
+    eventLabel: r.event_type === "sign_in" ? "Giriş" : "Çıkış",
+    createdAt: r.created_at,
+    userAgentShort:
+      r.user_agent && r.user_agent.length > 0
+        ? r.user_agent.length > 48
+          ? `${r.user_agent.slice(0, 48)}…`
+          : r.user_agent
+        : null,
+  }));
+}
+
 function workerDisplayName(w: UzmanWorkerRow): string {
   return (
     w.full_name?.trim() ||
@@ -333,6 +442,8 @@ function buildUzmanProgressRows({
       if (!quiz) {
         rows.push({
           key: `${w.id}-${course.id}`,
+          workerId: w.id,
+          courseId: course.id,
           workerName,
           workerEmail,
           companyName,
@@ -353,6 +464,8 @@ function buildUzmanProgressRows({
       if (prog === "none") {
         rows.push({
           key: `${w.id}-${course.id}`,
+          workerId: w.id,
+          courseId: course.id,
           workerName,
           workerEmail,
           companyName,
@@ -364,6 +477,8 @@ function buildUzmanProgressRows({
       } else if (prog.status === "failed") {
         rows.push({
           key: `${w.id}-${course.id}`,
+          workerId: w.id,
+          courseId: course.id,
           workerName,
           workerEmail,
           companyName,
@@ -375,6 +490,8 @@ function buildUzmanProgressRows({
       } else {
         rows.push({
           key: `${w.id}-${course.id}`,
+          workerId: w.id,
+          courseId: course.id,
           workerName,
           workerEmail,
           companyName,

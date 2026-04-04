@@ -7,6 +7,7 @@ import {
   validateWorkerPhoneDigits,
   workerSyntheticEmail,
 } from "@/lib/auth-worker";
+import { recordAuthSignIn } from "@/app/auth/log-activity-action";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -107,6 +108,7 @@ export async function registerWorker(
     return { error: "Kayıt tamamlanamadı." };
   }
 
+  await recordAuthSignIn();
   redirect("/dashboard?kayit=basarili");
 }
 
@@ -169,5 +171,6 @@ export async function registerUzman(
     return { error: "Kayıt tamamlanamadı." };
   }
 
+  await recordAuthSignIn();
   redirect("/dashboard?kayit=basarili");
 }
