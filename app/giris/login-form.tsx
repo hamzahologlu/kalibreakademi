@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -76,7 +75,6 @@ function GirisBrand() {
 }
 
 export function LoginForm() {
-  const router = useRouter();
   const [tab, setTab] = useState<"personel" | "uzman">("personel");
   const [workerTc, setWorkerTc] = useState("");
   const [workerPhone, setWorkerPhone] = useState("");
@@ -221,10 +219,16 @@ export function LoginForm() {
       toast.success("Giriş başarılı. Panele yönlendiriliyorsunuz.");
     }
 
-    await recordAuthSignIn();
-    router.push("/dashboard");
-    router.refresh();
+    try {
+      await recordAuthSignIn();
+    } catch {
+      /* tablo yoksa / ağ hatası — yine de panele git */
+    }
+
     setPending(false);
+    // Server action sonrası RSC yenilemesi bazen client router.push ile yarışıp
+    // sayfayı /giris'te bırakıyor; tam yükleme güvenilir.
+    window.location.assign("/dashboard");
   }
 
   return (
